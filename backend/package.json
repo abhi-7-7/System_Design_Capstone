@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --watch src --ext ts,json --exec ts-node src/server.ts",
-    "postinstall": "prisma generate --schema ../prisma/schema.prisma"
+    "postinstall": "prisma generate --schema ./prisma/schema.prisma"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +18,7 @@
     "exec": "ts-node src/server.ts"
   },
   "prisma": {
-    "schema": "../prisma/schema.prisma"
+    "schema": "./prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^7.6.0",
