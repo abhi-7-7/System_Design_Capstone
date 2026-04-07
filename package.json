@@ -10,7 +10,7 @@
     "dev:frontend": "vite --hot",
     "build:backend": "tsc --project backend/tsconfig.json && echo 'Backend build complete.'",
     "build:frontend": "vite build",
-    "db:migrate": "npx prisma migrate dev --datasource-api-url \"${process.env.DATABASE_URL}\"",
+    "db:migrate": "npx prisma migrate dev --schema backend/prisma/schema.prisma --datasource-api-url \"${process.env.DATABASE_URL}\"",
     "start:all": "npm run clean:all && npm run db:migrate && npm run dev:backend & npm run dev:frontend"
   },
   "keywords": [],

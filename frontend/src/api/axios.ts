@@ -77,6 +77,12 @@ export class ApiClient {
     private readonly baseUrls: string[];
     private activeBaseUrl: string;
 
+    private static isLocalFrontendHost(): boolean {
+        if (typeof window === "undefined") return false;
+        const host = window.location.hostname;
+        return host === "localhost" || host === "127.0.0.1";
+    }
+
     private static normalizeBaseUrl(url: string): string {
         const cleaned = url.replace(/\/+$/, "");
         return cleaned.endsWith("/api") ? cleaned : `${cleaned}/api`;
@@ -86,9 +92,14 @@ export class ApiClient {
      * Initializes the API Client and sets up interceptors for authentication flows.
      */
     constructor() {
-        this.baseUrls = ApiClient.primaryBaseUrl === ApiClient.localhostBaseUrl
-            ? [ApiClient.primaryBaseUrl]
-            : [ApiClient.primaryBaseUrl, ApiClient.localhostBaseUrl];
+        // If frontend is running locally, prefer local backend first to avoid slow cold starts on Render.
+        if (ApiClient.primaryBaseUrl === ApiClient.localhostBaseUrl) {
+            this.baseUrls = [ApiClient.primaryBaseUrl];
+        } else if (ApiClient.isLocalFrontendHost()) {
+            this.baseUrls = [ApiClient.localhostBaseUrl, ApiClient.primaryBaseUrl];
+        } else {
+            this.baseUrls = [ApiClient.primaryBaseUrl, ApiClient.localhostBaseUrl];
+        }
         this.activeBaseUrl = this.baseUrls[0];
 
         console.log("[API] Candidate base URLs:", this.baseUrls);
@@ -96,6 +107,7 @@ export class ApiClient {
         this.axiosInstance = axios.create({
             baseURL: this.activeBaseUrl,
             withCredentials: true,
+            timeout: 8000,
         });
 
         // Phase 1: Request Interceptor (Attach Token)
