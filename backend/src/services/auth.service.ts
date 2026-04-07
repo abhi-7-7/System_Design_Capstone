@@ -1,7 +1,14 @@
 import { prisma } from "../lib/prisma";
-import type { User } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt, { JwtPayload } from "jsonwebtoken";
+
+type UserRecord = {
+    id: string;
+    email: string;
+    password: string;
+    createdAt: Date;
+    name: string | null;
+};
 
 // --- 1. Custom Error Handling (Expert Level) ---
 
@@ -95,17 +102,18 @@ export class AuthService {
      * @param {string} email - The unique email address of the new user.
      * @param {string} password - The plain text password for the new user.
      * @param {string} [name] - Optional full name of the user.
-     * @returns {Promise<User>} The newly created user record from the database.
+     * @returns {Promise<UserRecord>} The newly created user record from the database.
      * @throws {AuthError} If a unique constraint violation occurs (e.g., email already exists).
      */
-    static async register(email: string, password: string, name?: string): Promise<User> {
+    static async register(email: string, password: string, name?: string): Promise<UserRecord> {
         // Hash the plain text password using bcrypt for secure storage (salt round 10).
         const hashedPassword = await bcrypt.hash(password, 10);
 
         try {
-            return prisma.user.create({
+            const user = await prisma.user.create({
                 data: { email, password: hashedPassword, name },
             });
+            return user as UserRecord;
         } catch (error) {
             // Check for common unique constraint errors from Prisma
             if (typeof error === 'object' && error !== null && 'code' in error && (error.code === 'P2002')) {
