@@ -2,47 +2,39 @@ import dotenv from "dotenv";
 import path from "path";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { Client } from "pg";
+import { Pool } from "pg";
 
 dotenv.config({
-path: path.resolve(__dirname, "../../.env"),
+  path: path.resolve(__dirname, "../../.env"),
 });
 
 const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
-throw new Error("DATABASE_URL is missing. Please set it in your .env file.");
+  throw new Error("DATABASE_URL is missing. Please set it in your .env file.");
 }
 
-const parsedUrl = new URL(databaseUrl);
-const envSslMode = process.env.DATABASE_SSL_MODE?.toLowerCase();
-const urlSslMode = parsedUrl.searchParams.get("sslmode")?.toLowerCase();
-
-const resolvedSslMode = (
-envSslMode ||
-urlSslMode ||
-(process.env.NODE_ENV === "production" ? "require" : "disable")
-).toLowerCase();
-
-const shouldUseSsl = resolvedSslMode !== "disable";
-
-const ssl = shouldUseSsl
-? { rejectUnauthorized: resolvedSslMode === "verify-full" }
-: false;
-
-if (!shouldUseSsl) {
-parsedUrl.searchParams.delete("sslmode");
-} else {
-parsedUrl.searchParams.set("sslmode", "verify-full");
+/**
+ * Singleton Prisma Client — Prisma v7 compatible.
+ * Uses pg.Pool (not pg.Client) with the PrismaPg adapter.
+ * Pool handles SSL lifecycle correctly, avoiding ssl.destroySSL crash.
+ */
+declare global {
+  // eslint-disable-next-line no-var
+  var __prisma: PrismaClient | undefined;
 }
 
-const client = new Client({
-connectionString: parsedUrl.toString(),
-ssl,
+const pool = new Pool({
+  connectionString: databaseUrl,
+  ssl: { rejectUnauthorized: false },
 });
 
-const adapter = new PrismaPg(client);
+const adapter = new PrismaPg(pool);
 
-export const prisma = new PrismaClient({
-adapter,
-});
+export const prisma: PrismaClient =
+  global.__prisma ??
+  new PrismaClient({ adapter } as ConstructorParameters<typeof PrismaClient>[0]);
+
+if (process.env.NODE_ENV !== "production") {
+  global.__prisma = prisma;
+}
