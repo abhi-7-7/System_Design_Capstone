@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import axios, { AxiosError } from "axios";
 import api from "../api/axios";

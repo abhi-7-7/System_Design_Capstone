@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { Task } from '../core/models/Task';
 import type { PriorityLevel } from '../core/models/Task';
 

@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import TaskCard from './TaskCard';
 import { Task } from '../core/models/Task';
 

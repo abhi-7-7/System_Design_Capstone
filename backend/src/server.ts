@@ -11,20 +11,27 @@ import taskRoutes from "./routes/task.routes";
 const setupApp = (): Application => {
   const app = express();
 
+  const envOrigins = (process.env.FRONTEND_URL || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    ...envOrigins,
+  ];
+
   // ✅ Middleware
 
   app.use(cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://localhost:5175",
-    ],
+    origin: allowedOrigins,
     credentials: true,
   }));
   app.use(express.json());
-  app.use(cookieParser()); // ✅ MUST be before routes
+  app.use(cookieParser()); //
 
-  // ✅ Root route so browser visits to http://localhost:3000/ don't show "Cannot GET /"
   app.get("/", (req, res) => {
     res.send("Backend is running ✅ Visit /api/auth/ping for auth health.");
   });
