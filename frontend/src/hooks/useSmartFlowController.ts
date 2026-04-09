@@ -23,7 +23,6 @@ export const useSmartFlowController = () => {
 
     class ControllerObserver implements IObserver {
       update(event: string, task: Task): void {
-        console.log(`[SmartFlow Controller Event]: ${event}`, task);
         
         switch (event) {
           case 'TASK_ADDED':

@@ -40,7 +40,12 @@ class TaskCard extends Component<TaskCardProps> {
     return (
       <div className={`group bg-[#151515] border border-[#2A2A2A] rounded-lg p-4 mb-3 transition-all duration-300 ease-out hover:bg-[#1c1c1c] hover:-translate-y-1 hover:rounded-xl border-l-4 ${this.getBorderStyle()} ${this.getGlowStyle()} animate-slide-down`}>
         <div className="flex justify-between items-start mb-2.5">
-          <h3 className="font-medium text-[15px] text-gray-200 leading-snug group-hover:text-white transition-colors">{task.title}</h3>
+          <h3 
+            onClick={() => this.props.onView(task.id)} 
+            className="font-medium text-[15px] text-gray-200 leading-snug group-hover:text-indigo-400 cursor-pointer transition-colors"
+          >
+            {task.title}
+          </h3>
           <div className="flex items-center gap-2">
               <button 
                 onClick={() => onEdit(task)} 

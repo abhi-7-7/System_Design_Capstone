@@ -49,6 +49,10 @@ class DashboardComponent extends Component<DashboardProps, DashboardState> imple
 
     componentDidMount() {
         this.taskService.getEventManager().addObserver(this);
+        // Initial Fetch from Backend
+        this.taskService.fetchTasks().catch(err => {
+            console.error("Dashboard failed to load initial data:", err);
+        });
     }
 
     componentWillUnmount() {

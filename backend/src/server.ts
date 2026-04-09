@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 
 import authRoutes from "./routes/auth.routes";
 import userRoutes from "./routes/user.routes";
+import taskRoutes from "./routes/task.routes";
 
 const setupApp = (): Application => {
   const app = express();
@@ -36,6 +37,7 @@ const setupApp = (): Application => {
   // ✅ Routes
   app.use("/api/auth", authRoutes);
   app.use("/api/user", userRoutes);
+  app.use("/api/tasks", taskRoutes);
 
   // ✅ Error handler
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
