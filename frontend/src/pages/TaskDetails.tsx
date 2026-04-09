@@ -3,10 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { TaskService } from '../core/services/TaskService';
 import { Task } from '../core/models/Task';
 import UserMenu from '../components/UserMenu';
+import CreateTaskModal from '../components/CreateTaskModal';
 
 interface TaskDetailsState {
     task: Task | null;
     isLoading: boolean;
+    isEditModalOpen: boolean;
 }
 
 interface TaskDetailsProps {
@@ -19,13 +21,14 @@ class TaskDetailsComponent extends Component<TaskDetailsProps, TaskDetailsState>
 
     state: TaskDetailsState = {
         task: null,
-        isLoading: true
+        isLoading: true,
+        isEditModalOpen: false
     };
 
     componentDidMount() {
         const { taskId } = this.props;
         const task = this.taskService.getTasks().find(t => t.id === taskId);
-        
+
         // Simulating a minor delay for "premium" feel
         setTimeout(() => {
             this.setState({ task: task || null, isLoading: false });
@@ -36,8 +39,21 @@ class TaskDetailsComponent extends Component<TaskDetailsProps, TaskDetailsState>
         this.props.navigate('/dashboard');
     };
 
+    handleDelete = () => {
+        const { task } = this.state;
+        if (task && window.confirm("Are you sure you want to archive (delete) this task?")) {
+            this.taskService.deleteTask(task.id);
+            this.handleBack();
+        }
+    };
+
+    handleUpdate = (updatedTask: Task) => {
+        this.taskService.updateTask(updatedTask);
+        this.setState({ task: updatedTask, isEditModalOpen: false });
+    };
+
     render() {
-        const { task, isLoading } = this.state;
+        const { task, isLoading, isEditModalOpen } = this.state;
 
         if (isLoading) {
             return (
@@ -59,8 +75,8 @@ class TaskDetailsComponent extends Component<TaskDetailsProps, TaskDetailsState>
             );
         }
 
-        const formattedDate = new Date(task.deadline).toLocaleDateString('en-US', { 
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+        const formattedDate = new Date(task.deadline).toLocaleDateString('en-US', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
         });
 
         return (
@@ -76,7 +92,7 @@ class TaskDetailsComponent extends Component<TaskDetailsProps, TaskDetailsState>
                             <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.1em] opacity-80">Workspace</p>
                         </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-6">
                         <button onClick={this.handleBack} className="text-gray-400 hover:text-gray-100 text-[13px] font-medium transition-colors">
                             Back to Board
@@ -92,11 +108,10 @@ class TaskDetailsComponent extends Component<TaskDetailsProps, TaskDetailsState>
                         <div className="lg:col-span-2 space-y-8">
                             <div>
                                 <div className="flex items-center gap-3 mb-4">
-                                    <span className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${
-                                        task.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                                        task.status === 'IN_PROGRESS' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
-                                        'bg-gray-500/10 text-gray-400 border border-gray-500/20'
-                                    }`}>
+                                    <span className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${task.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                                            task.status === 'IN_PROGRESS' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                                                'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                                        }`}>
                                         {task.status.replace('_', ' ')}
                                     </span>
                                     <span className="text-gray-600">•</span>
@@ -113,15 +128,41 @@ class TaskDetailsComponent extends Component<TaskDetailsProps, TaskDetailsState>
                             </div>
 
                             <div className="pt-8 border-t border-[#1a1a1a]">
-                                <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-6">Task Activity</h3>
-                                <div className="space-y-6">
-                                    <div className="flex gap-4">
-                                        <div className="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center text-indigo-400">
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-8">Task Activity</h3>
+                                <div className="relative pl-8 space-y-10">
+                                    {/* Vertical Timeline Line */}
+                                    <div className="absolute left-4 top-0 bottom-0 w-px bg-gradient-to-b from-indigo-500/50 via-[#1a1a1a] to-transparent"></div>
+
+                                    {/* Entry 1: Status */}
+                                    <div className="relative">
+                                        <div className="absolute -left-10 w-4 h-4 rounded-full bg-[#000] border-2 border-indigo-500 z-10"></div>
+                                        <div>
+                                            <p className="text-[14px] text-gray-200 font-medium">
+                                                Task moved to <span className="text-white font-bold">{task.status.replace('_', ' ')}</span>
+                                            </p>
+                                            <p className="text-[11px] text-gray-500 mt-1">Updated by System • Just now</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Entry 2: Priority */}
+                                    <div className="relative">
+                                        <div className="absolute -left-10 w-4 h-4 rounded-full bg-[#000] border-2 border-purple-500 z-10 text-[8px] flex items-center justify-center font-bold text-purple-500">P</div>
+                                        <div>
+                                            <p className="text-[14px] text-gray-200 font-medium">
+                                                Set priority to <span className="text-white font-bold">{task.priorityLevel}</span>
+                                            </p>
+                                            <p className="text-[11px] text-gray-500 mt-1">Priority Strategy calculated score: {task.priorityScore.toFixed(2)}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Entry 3: Creation */}
+                                    <div className="relative">
+                                        <div className="absolute -left-10 w-4 h-4 rounded-full bg-[#000] border-2 border-gray-700 z-10 flex items-center justify-center">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-gray-500"></div>
                                         </div>
                                         <div>
-                                            <p className="text-[13px] text-gray-300"><span className="font-bold text-white">System</span> created this task</p>
-                                            <p className="text-[11px] text-gray-500 mt-1">Automatic entry</p>
+                                            <p className="text-[14px] text-gray-400 font-medium">Task initialized in Workspace</p>
+                                            <p className="text-[11px] text-gray-500 mt-1">Automatic entry from SmartFlow Engine</p>
                                         </div>
                                     </div>
                                 </div>
@@ -136,11 +177,10 @@ class TaskDetailsComponent extends Component<TaskDetailsProps, TaskDetailsState>
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
                                             <span className="text-[13px] text-gray-400">Priority</span>
-                                            <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                                                task.priorityLevel === 'Critical' ? 'text-red-400 bg-red-400/10' :
-                                                task.priorityLevel === 'High' ? 'text-amber-400 bg-amber-400/10' :
-                                                'text-blue-400 bg-blue-400/10'
-                                            }`}>
+                                            <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${task.priorityLevel === 'Critical' ? 'text-red-400 bg-red-400/10' :
+                                                    task.priorityLevel === 'High' ? 'text-amber-400 bg-amber-400/10' :
+                                                        'text-blue-400 bg-blue-400/10'
+                                                }`}>
                                                 {task.priorityLevel}
                                             </span>
                                         </div>
@@ -160,11 +200,17 @@ class TaskDetailsComponent extends Component<TaskDetailsProps, TaskDetailsState>
                                 </div>
 
                                 <div className="pt-6 border-t border-[#1a1a1a]">
-                                    <button className="w-full py-2.5 bg-[#1a1a1a] hover:bg-[#222] text-white rounded-xl text-[13px] font-bold transition-all border border-[#222] mb-3">
+                                    <button
+                                        onClick={() => this.setState({ isEditModalOpen: true })}
+                                        className="w-full py-2.5 bg-[#1a1a1a] hover:bg-[#222] text-white rounded-xl text-[13px] font-bold transition-all border border-[#222] mb-3"
+                                    >
                                         Edit Details
                                     </button>
-                                    <button className="w-full py-2.5 border border-red-900/30 text-red-500/80 hover:bg-red-500/5 hover:text-red-500 rounded-xl text-[13px] font-bold transition-all">
-                                        Archive Task
+                                    <button
+                                        onClick={this.handleDelete}
+                                        className="w-full py-2.5 border border-red-900/30 text-red-500/80 hover:bg-red-500/5 hover:text-red-500 rounded-xl text-[13px] font-bold transition-all"
+                                    >
+                                        Delete Task
                                     </button>
                                 </div>
                             </div>
@@ -178,6 +224,14 @@ class TaskDetailsComponent extends Component<TaskDetailsProps, TaskDetailsState>
                         </div>
                     </div>
                 </main>
+
+                {isEditModalOpen && (
+                    <CreateTaskModal
+                        initialTask={task}
+                        onClose={() => this.setState({ isEditModalOpen: false })}
+                        onSave={this.handleUpdate}
+                    />
+                )}
             </div>
         );
     }

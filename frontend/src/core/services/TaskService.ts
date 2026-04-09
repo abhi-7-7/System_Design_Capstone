@@ -3,6 +3,7 @@ import type { PriorityLevel } from '../models/Task';
 import type { IPriorityStrategy } from '../strategies/PriorityStrategy';
 import { DeadlineBasedStrategy } from '../strategies/PriorityStrategy';
 import { TaskEventManager } from '../observers/NotificationObserver';
+import api from '../../api/axios'; // Use our configured axios instance
 
 export class TaskService {
   private static instance: TaskService;
@@ -13,7 +14,7 @@ export class TaskService {
   private constructor() {
     this.eventManager = new TaskEventManager();
     this.priorityStrategy = new DeadlineBasedStrategy();
-    this.initializeMockData();
+    // No mock data here - we wait for the fetchTasks() call from the UI
   }
 
   public static getInstance(): TaskService {
@@ -23,43 +24,33 @@ export class TaskService {
     return TaskService.instance;
   }
 
-  private initializeMockData() {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const nextWeek = new Date();
-    nextWeek.setDate(nextWeek.getDate() + 7);
-
-    const past = new Date();
-    past.setDate(past.getDate() - 1);
-
-    const task1 = new TaskBuilder("Design System Documentation")
-      .setDescription("Complete the documentation for design patterns")
-      .setStatus('DONE')
-      .setDeadline(past)
-      .setPriorityLevel('Critical')
-      .setWorkload(4)
-      .build();
-
-    const task2 = new TaskBuilder("Build Kanban Board UI")
-      .setDescription("Implement drag and drop functionality")
-      .setStatus('IN_PROGRESS')
-      .setDeadline(tomorrow)
-      .setPriorityLevel('High')
-      .setWorkload(8)
-      .build();
-
-    const task3 = new TaskBuilder("Implement API Integration")
-      .setDescription("Connect frontend to backend services")
-      .setStatus('TODO')
-      .setDeadline(nextWeek)
-      .setPriorityLevel('Normal')
-      .setWorkload(12)
-      .build();
-
-    this.addTask(task1);
-    this.addTask(task2);
-    this.addTask(task3);
+  /**
+   * Fetches all tasks from the backend and updates the local state.
+   */
+  public async fetchTasks(): Promise<Task[]> {
+    try {
+      const response = await api.get('/tasks');
+      const rawTasks = response.data;
+      
+      this.tasks = rawTasks.map((t: any) => 
+        new TaskBuilder(t.title)
+          .setId(t.id)
+          .setDescription(t.description)
+          .setStatus(t.status)
+          .setDeadline(new Date(t.deadline))
+          .setPriorityLevel(t.priorityLevel)
+          .setPriorityScore(t.priorityScore)
+          .setWorkload(t.workload)
+          .setCreatedAt(new Date(t.createdAt))
+          .build()
+      );
+      
+      this.eventManager.notifyObservers("TASK_UPDATED", this.tasks[0]); // Trigger UI refresh
+      return this.tasks;
+    } catch (error) {
+      console.error("Failed to fetch tasks from API:", error);
+      throw error;
+    }
   }
 
   public getEventManager(): TaskEventManager {
@@ -75,63 +66,112 @@ export class TaskService {
     return this.tasks;
   }
 
-  public addTask(task: Task) {
-    task.priorityScore = this.priorityStrategy.calculateScore(task);
-    this.tasks.push(task);
-    this.notifyIfDeadlineClose(task);
-    this.eventManager.notifyObservers("TASK_ADDED", task);
-  }
+  public async addTask(task: Task) {
+    try {
+      // Calculate priority locally first
+      task.priorityScore = this.priorityStrategy.calculateScore(task);
+      
+      const response = await api.post('/tasks', {
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        priorityLevel: task.priorityLevel,
+        priorityScore: task.priorityScore,
+        deadline: task.deadline.toISOString(),
+        workload: task.workload
+      });
 
-  public updateTask(updatedTask: Task) {
-    const index = this.tasks.findIndex(t => t.id === updatedTask.id);
-    if (index !== -1) {
-      updatedTask.priorityScore = this.priorityStrategy.calculateScore(updatedTask);
-      this.tasks[index] = updatedTask;
-      this.notifyIfDeadlineClose(updatedTask);
-      this.eventManager.notifyObservers("TASK_UPDATED", updatedTask);
+      const newTask = new TaskBuilder(response.data.title)
+        .setId(response.data.id)
+        .setDescription(response.data.description)
+        .setStatus(response.data.status)
+        .setDeadline(new Date(response.data.deadline))
+        .setPriorityLevel(response.data.priorityLevel)
+        .setPriorityScore(response.data.priorityScore)
+        .setWorkload(response.data.workload)
+        .setCreatedAt(new Date(response.data.createdAt))
+        .build();
+
+      this.tasks.push(newTask);
+      this.notifyIfDeadlineClose(newTask);
+      this.eventManager.notifyObservers("TASK_ADDED", newTask);
+    } catch (error) {
+      console.error("Failed to add task via API:", error);
     }
   }
 
-  public updateTaskStatus(id: string, status: 'TODO' | 'IN_PROGRESS' | 'DONE') {
+  public async updateTask(updatedTask: Task) {
+    try {
+      updatedTask.priorityScore = this.priorityStrategy.calculateScore(updatedTask);
+      
+      await api.put(`/tasks/${updatedTask.id}`, {
+        title: updatedTask.title,
+        description: updatedTask.description,
+        status: updatedTask.status,
+        priorityLevel: updatedTask.priorityLevel,
+        priorityScore: updatedTask.priorityScore,
+        deadline: updatedTask.deadline.toISOString(),
+        workload: updatedTask.workload
+      });
+
+      const index = this.tasks.findIndex(t => t.id === updatedTask.id);
+      if (index !== -1) {
+        this.tasks[index] = updatedTask;
+        this.notifyIfDeadlineClose(updatedTask);
+        this.eventManager.notifyObservers("TASK_UPDATED", updatedTask);
+      }
+    } catch (error) {
+      console.error("Failed to update task via API:", error);
+    }
+  }
+
+  public async updateTaskStatus(id: string, status: 'TODO' | 'IN_PROGRESS' | 'DONE') {
       const task = this.tasks.find(t => t.id === id);
       if(task) {
           task.status = status;
-          this.updateTask(task);
+          await this.updateTask(task);
       }
   }
 
-  public updateTaskPriority(id: string, newPriority: PriorityLevel) {
+  public async updateTaskPriority(id: string, newPriority: PriorityLevel) {
       const task = this.tasks.find(t => t.id === id);
       if(task) {
           task.priorityLevel = newPriority;
-          this.updateTask(task);
+          await this.updateTask(task);
       }
   }
 
-  public deleteTask(id: string) {
-    const task = this.tasks.find(t => t.id === id);
-    if (task) {
-        this.tasks = this.tasks.filter(t => t.id !== id);
-        this.eventManager.notifyObservers("TASK_DELETED", task);
+  public async deleteTask(id: string) {
+    try {
+      await api.delete(`/tasks/${id}`);
+      
+      const task = this.tasks.find(t => t.id === id);
+      if (task) {
+          this.tasks = this.tasks.filter(t => t.id !== id);
+          this.eventManager.notifyObservers("TASK_DELETED", task);
+      }
+    } catch (error) {
+      console.error("Failed to delete task via API:", error);
     }
   }
 
   public recalculateAllPriorities() {
-    this.tasks.forEach(task => {
+    this.tasks.forEach(async (task) => {
       task.priorityScore = this.priorityStrategy.calculateScore(task);
+      await this.updateTask(task); // Persist recalculated priorities
     });
-    // Just notify with a dummy task to trigger re-render
-    if (this.tasks.length > 0) {
-        this.eventManager.notifyObservers("PRIORITIES_RECALCULATED", this.tasks[0]);
-    }
   }
 
   private notifyIfDeadlineClose(task: Task) {
       if (task.status === 'DONE') return;
       
       const now = new Date();
-      const daysUntilDeadline = Math.ceil((task.deadline.getTime() - now.getTime()) / (1000 * 3600 * 24));
       
+      // Grace period: Don't notify if the task was created in the last 5 minutes
+      const ageInMinutes = (now.getTime() - task.createdAt.getTime()) / (1000 * 60);
+      if (ageInMinutes < 5) return;
+
+      const daysUntilDeadline = Math.ceil((task.deadline.getTime() - now.getTime()) / (1000 * 3600 * 24));
       if (daysUntilDeadline <= 1) {
           this.eventManager.notifyObservers("DEADLINE_WARNING", task);
       }

@@ -102,8 +102,6 @@ export class ApiClient {
         }
         this.activeBaseUrl = this.baseUrls[0];
 
-        console.log("[API] Candidate base URLs:", this.baseUrls);
-
         this.axiosInstance = axios.create({
             baseURL: this.activeBaseUrl,
             withCredentials: true,
@@ -130,11 +128,6 @@ export class ApiClient {
                     const headers = config.headers as Record<string, string>;
                     headers.Authorization = `Bearer ${token}`;
                 }
-
-                console.log("[API] Request:", {
-                    method: config.method?.toUpperCase(),
-                    url: `${config.baseURL ?? ""}${config.url ?? ""}`,
-                });
                 return config;
             },
             (error) => Promise.reject(error)

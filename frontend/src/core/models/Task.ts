@@ -8,9 +8,10 @@ export interface ITask {
   status: TaskStatus;
   deadline: Date;
   priorityLevel: PriorityLevel;
-  workload: number; // estimated hours
+  workload: number;
   priorityScore: number;
   tags: string[];
+  createdAt: Date;
 }
 
 export class Task implements ITask {
@@ -23,6 +24,7 @@ export class Task implements ITask {
   public workload: number;
   public priorityScore: number;
   public tags: string[];
+  public createdAt: Date;
 
   constructor(builder: TaskBuilder) {
     this.id = builder.id || crypto.randomUUID();
@@ -34,6 +36,7 @@ export class Task implements ITask {
     this.workload = builder.workload || 1;
     this.priorityScore = builder.priorityScore || 0;
     this.tags = builder.tags || [];
+    this.createdAt = builder.createdAt || new Date();
   }
 }
 
@@ -47,6 +50,7 @@ export class TaskBuilder {
   public workload?: number;
   public priorityScore?: number;
   public tags?: string[];
+  public createdAt?: Date;
 
   constructor(title: string) {
     this.title = title;
@@ -89,6 +93,11 @@ export class TaskBuilder {
 
   public setTags(tags: string[]): TaskBuilder {
     this.tags = tags;
+    return this;
+  }
+
+  public setCreatedAt(createdAt: Date): TaskBuilder {
+    this.createdAt = createdAt;
     return this;
   }
 
