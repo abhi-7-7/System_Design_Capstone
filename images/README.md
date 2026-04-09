@@ -6,8 +6,6 @@ This folder contains all architecture and design diagrams used in the **System D
 
 ## 1. Use Case Diagram
 
-![Use Case Diagram](Usecase_diagram.jpg)
-
 ### Description
 Represents the interactions between users/admins and the Task Management System.
 
@@ -26,8 +24,6 @@ Represents the interactions between users/admins and the Task Management System.
 ---
 
 ## 2. Entity Relationship Diagram (ER Diagram)
-
-![ER Diagram](ER_diagram.jpg)
 
 ### Description
 Defines the database schema and relationships between entities.
@@ -64,8 +60,6 @@ Defines the database schema and relationships between entities.
 
 ## 3. Class Diagram
 
-![Class Diagram](Class_diagram.jpg)
-
 ### Description
 Illustrates the object-oriented design and design patterns used in the system.
 
@@ -94,8 +88,6 @@ Illustrates the object-oriented design and design patterns used in the system.
 ---
 
 ## 4. Sequence Diagram
-
-![Sequence Diagram](Sequence_diagram.jpg)
 
 ### Description
 Shows interaction flow between system components during major operations.
