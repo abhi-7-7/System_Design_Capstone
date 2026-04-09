@@ -98,7 +98,7 @@ export class ApiClient {
         } else if (ApiClient.isLocalFrontendHost()) {
             this.baseUrls = [ApiClient.localhostBaseUrl, ApiClient.primaryBaseUrl];
         } else {
-            this.baseUrls = [ApiClient.primaryBaseUrl, ApiClient.localhostBaseUrl];
+            this.baseUrls = [ApiClient.primaryBaseUrl];
         }
         this.activeBaseUrl = this.baseUrls[0];
 

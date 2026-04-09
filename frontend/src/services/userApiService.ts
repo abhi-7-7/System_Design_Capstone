@@ -133,7 +133,7 @@ export class UserApiService {
                 
                 throw new Error(`Server Error (${status}): ${message}`);
             } else if (apiError.request) {
-                throw new Error("No response from server. Please check if your backend is running on port 3000.");
+                throw new Error("No response from server. Please check your backend URL and CORS settings.");
             } else {
                 throw new Error(`Request setup failed: ${apiError.message}`);
             }
