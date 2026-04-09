@@ -8,6 +8,7 @@ interface TaskCardProps {
   onMove: (id: string, status: 'TODO' | 'IN_PROGRESS' | 'DONE') => void;
   onSetPriorityLevel?: (id: string, priority: PriorityLevel) => void;
   onEdit: (task: Task) => void;
+  onView: (id: string) => void;
 }
 
 /**

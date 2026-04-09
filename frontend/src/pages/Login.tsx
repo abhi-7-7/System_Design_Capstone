@@ -53,6 +53,7 @@ class Login extends Component<object, LoginState> {
       }
 
       localStorage.setItem("accessToken", token);
+      localStorage.setItem("userEmail", email);
       window.location.replace("/dashboard");
       
     } catch (err: unknown) {

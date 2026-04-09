@@ -7,6 +7,7 @@ interface KanbanBoardProps {
   tasks: Task[];
   onMoveTask: (id: string, status: 'TODO' | 'IN_PROGRESS' | 'DONE') => void;
   onEditTask: (task: Task) => void;
+  onViewTask: (id: string) => void;
 }
 
 /**
@@ -24,7 +25,7 @@ class KanbanBoard extends Component<KanbanBoardProps> {
   };
 
   render() {
-    const { onMoveTask, onEditTask } = this.props;
+    const { onMoveTask, onEditTask, onViewTask } = this.props;
 
     const columns = [
       { title: 'To Do', status: 'TODO', dotColor: 'bg-gray-500' },
@@ -48,7 +49,7 @@ class KanbanBoard extends Component<KanbanBoardProps> {
             
             <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
               {this.getTasksByStatus(col.status).map(task => (
-                <TaskCard key={task.id} task={task} onMove={onMoveTask} onEdit={onEditTask} />
+                <TaskCard key={task.id} task={task} onMove={onMoveTask} onEdit={onEditTask} onView={onViewTask} />
               ))}
               
               {this.getTasksByStatus(col.status).length === 0 && (
