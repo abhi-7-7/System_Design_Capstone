@@ -172,8 +172,8 @@ export class ApiClient {
                     }
                 }
 
-                // Condition 1: Must be a 401 AND we must not have already attempted refresh for this request.
-                if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+                // Condition 1: Must be a 401/403 AND we must not have already attempted refresh for this request.
+                if ((error.response?.status === 401 || error.response?.status === 403) && originalRequest && !originalRequest._retry) {
                     
                     // Mark the request attempt to prevent infinite loop retries.
                     originalRequest._retry = true;

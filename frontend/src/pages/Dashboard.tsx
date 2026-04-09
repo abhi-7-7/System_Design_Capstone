@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { useNavigate } from "react-router-dom";
+import UserMenu from "../components/UserMenu";
 import { Task } from "../core/models/Task";
 import KanbanBoard from "../components/KanbanBoard";
 import AnalyticsPanel from "../components/AnalyticsPanel";
@@ -26,6 +27,7 @@ interface DashboardState {
     isCreateOpen: boolean;
     editingTask: Task | null;
     activeStrategy: 'deadline' | 'workload';
+    searchQuery: string;
 }
 
 /**
@@ -41,7 +43,8 @@ class DashboardComponent extends Component<DashboardProps, DashboardState> imple
         notifications: [],
         isCreateOpen: false,
         editingTask: null,
-        activeStrategy: 'deadline'
+        activeStrategy: 'deadline',
+        searchQuery: ''
     };
 
     componentDidMount() {
@@ -81,23 +84,24 @@ class DashboardComponent extends Component<DashboardProps, DashboardState> imple
                     timeStr = `1d left`;
                 }
 
-                this.setState(prevState => {
-                    const msg = `Warning: Task "${task.title}" is nearing its deadline!`;
-                    if (!prevState.notifications.find(n => n.message === msg)) {
-                        return {
-                            notifications: [...prevState.notifications, { id: Date.now() + Math.random(), message: msg, highlight: timeStr }]
-                        };
-                    }
-                    return null;
-                });
+                if (!this.state.notifications.find(n => n.message === `Warning: Task "${task.title}" is nearing its deadline!`)) {
+                    this.setState(prevState => ({
+                        notifications: [...prevState.notifications, { id: Date.now() + Math.random(), message: `Warning: Task "${task.title}" is nearing its deadline!`, highlight: timeStr }]
+                    }));
+                }
                 break;
             }
         }
     }
 
     handleLogout = () => {
+        localStorage.removeItem("accessToken");
         this.props.navigate("/");
     };
+
+    handleProfile = () => {
+        this.props.navigate("/profile");
+    }
 
     handleStrategyChange = (type: 'deadline' | 'workload') => {
         this.setState({ activeStrategy: type });
@@ -111,30 +115,44 @@ class DashboardComponent extends Component<DashboardProps, DashboardState> imple
         }));
     };
 
+    handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        this.setState({ searchQuery: e.target.value });
+    };
+
     render() {
-        const { tasks, analytics, notifications, isCreateOpen, editingTask, activeStrategy } = this.state;
+        const { tasks, analytics, notifications, isCreateOpen, editingTask, activeStrategy, searchQuery } = this.state;
+        
+        const filteredTasks = tasks.filter(task => 
+            task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            task.description.toLowerCase().includes(searchQuery.toLowerCase())
+        );
 
         return (
             <div className="min-h-screen bg-[#000000] text-gray-300 font-sans selection:bg-indigo-500/30 text-left">
                 {/* Top Navigation */}
-                <nav className="sticky top-0 z-40 bg-[#000000]/90 backdrop-blur-md border-b border-[#222] px-6 py-3 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-md bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                <nav className="sticky top-0 z-40 bg-[#070707]/95 backdrop-blur-xl border-b border-[#1a1a1a] px-8 py-4 flex justify-between items-center shadow-2xl">
+                    <div className="flex items-center gap-4 group cursor-pointer" onClick={() => this.props.navigate("/dashboard")}>
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center text-white font-black text-base shadow-[0_0_20px_rgba(79,70,229,0.3)] group-hover:scale-110 transition-transform duration-300">
                             SF
                         </div>
                         <div>
-                            <h1 className="text-sm font-semibold text-gray-100 tracking-tight">SmartFlow</h1>
+                            <h1 className="text-base font-bold text-white tracking-tighter leading-none mb-0.5">SmartFlow</h1>
+                            <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.1em] opacity-80">Workspace</p>
                         </div>
                     </div>
                     
-                    <div className="flex items-center gap-3">
-                         <button onClick={() => this.setState({ isCreateOpen: true })} className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-md font-medium text-[13px] transition-all duration-200 shadow-sm hover:shadow-indigo-500/20">
-                            New Task
+                    <div className="flex items-center gap-6">
+                         <button 
+                            onClick={() => this.setState({ isCreateOpen: true })} 
+                            className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-xl font-bold text-[13px] transition-all duration-300 shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-indigo-500/40 flex items-center gap-2"
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                            Explore Tasks
                         </button>
-                        <div className="w-px h-4 bg-[#333] mx-1"></div>
-                        <button onClick={this.handleLogout} className="text-gray-400 hover:text-gray-100 text-[13px] font-medium transition-colors">
-                            Sign out
-                        </button>
+                        
+                        <div className="w-px h-6 bg-[#222]"></div>
+                        
+                        <UserMenu />
                     </div>
                 </nav>
 
@@ -165,7 +183,7 @@ class DashboardComponent extends Component<DashboardProps, DashboardState> imple
                         </div>
                     </div>
 
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-8 mt-2 text-left">
                         <div className="flex items-center gap-2">
                             <div className="flex bg-[#111] p-1 rounded-md border border-[#222]">
                                 <button 
@@ -180,13 +198,32 @@ class DashboardComponent extends Component<DashboardProps, DashboardState> imple
                                 </button>
                             </div>
                         </div>
+
+                        {/* Search Bar */}
+                        <div className="flex-1 max-w-sm">
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                    <svg className="w-4 h-4 text-gray-500 group-focus-within:text-indigo-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </div>
+                                <input 
+                                    type="text"
+                                    placeholder="Search tasks..."
+                                    value={searchQuery}
+                                    onChange={this.handleSearchChange}
+                                    className="w-full bg-[#111] border border-[#222] rounded-lg pl-10 pr-4 py-2 text-[13px] text-gray-200 placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Kanban Board */}
                     <KanbanBoard 
-                        tasks={tasks} 
+                        tasks={filteredTasks} 
                         onMoveTask={(id, status) => this.taskService.updateTaskStatus(id, status)} 
                         onEditTask={(t) => this.setState({ editingTask: t })} 
+                        onViewTask={(id) => this.props.navigate(`/task/${id}`)}
                     />
                 </main>
 

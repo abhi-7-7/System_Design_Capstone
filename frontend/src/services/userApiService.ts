@@ -111,24 +111,32 @@ export class UserApiService {
         }
 
         try {
-            const response = await this.api.get<UserProfileResponse>("/user/me", {
+            const response = await this.api.get<UserProfileResponse>("user/me", {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                 },
             });
-            return response.data?.message ?? ''; // Return empty string if message is null
+            return response.data?.message ?? ''; 
         } catch (error) {
-            const apiError = error as AxiosError;
+            const apiError = error as AxiosError<{ message?: string; error?: string }>;
 
-            if (apiError.response?.status === 401) {
-                console.warn("Authentication failure: Token expired/invalid.");
-                localStorage.removeItem("accessToken"); // Crucial state change upon 401
-                throw new Error("Unauthorized access. Please log in again.");
+            if (apiError.response) {
+                const status = apiError.response.status;
+                const message = apiError.response.data?.message || apiError.response.data?.error || "Unknown server error";
+                
+                if (status === 401 || status === 403) {
+                    console.warn(`[Auth] Session issue (${status}). Token may be expired.`);
+                    // We don't remove the token here because the axios interceptor might be trying to refresh it.
+                    // If the refresh fails, the interceptor will handle the logout.
+                    throw new Error("Session issue. Attempting to restore access...");
+                }
+                
+                throw new Error(`Server Error (${status}): ${message}`);
+            } else if (apiError.request) {
+                throw new Error("No response from server. Please check if your backend is running on port 3000.");
+            } else {
+                throw new Error(`Request setup failed: ${apiError.message}`);
             }
-
-            // Handle network or generic API errors
-            console.error("API Call Failed:", apiError);
-            throw new Error("Failed to load user profile. Check connection or try again.");
         }
     }
 }
