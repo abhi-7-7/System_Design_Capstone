@@ -17,6 +17,7 @@ const setupApp = (): Application => {
     .filter(Boolean);
 
   const allowedOrigins = [
+     process.env.FRONTEND_URL || "https://system-design-capstone.vercel.app",
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:5175",
