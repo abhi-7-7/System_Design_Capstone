@@ -1,9 +1,22 @@
 import { Task, TaskBuilder } from '../models/Task';
+import type { TaskStatus } from '../models/Task';
 import type { PriorityLevel } from '../models/Task';
 import type { IPriorityStrategy } from '../strategies/PriorityStrategy';
 import { DeadlineBasedStrategy } from '../strategies/PriorityStrategy';
 import { TaskEventManager } from '../observers/NotificationObserver';
 import api from '../../api/axios'; // Use our configured axios instance
+
+interface TaskApiResponse {
+  id: string;
+  title: string;
+  description?: string | null;
+  status: TaskStatus;
+  deadline: string;
+  priorityLevel: PriorityLevel;
+  workload: number;
+  priorityScore: number;
+  createdAt: string;
+}
 
 export class TaskService {
   private static instance: TaskService;
@@ -29,13 +42,13 @@ export class TaskService {
    */
   public async fetchTasks(): Promise<Task[]> {
     try {
-      const response = await api.get('/tasks');
+      const response = await api.get<TaskApiResponse[]>('/tasks');
       const rawTasks = response.data;
       
-      this.tasks = rawTasks.map((t: any) => 
+      this.tasks = rawTasks.map((t) => 
         new TaskBuilder(t.title)
           .setId(t.id)
-          .setDescription(t.description)
+          .setDescription(t.description ?? '')
           .setStatus(t.status)
           .setDeadline(new Date(t.deadline))
           .setPriorityLevel(t.priorityLevel)

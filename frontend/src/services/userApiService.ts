@@ -144,7 +144,7 @@ export class UserApiService {
 /**
  * Backward-compatible functional API used by hooks/components.
  */
-export const fetchUserProfile = async (_accessToken?: string): Promise<string | null> => {
+export const fetchUserProfile = async (): Promise<string | null> => {
     const service = new UserApiService();
     const message = await service.getProfile();
     return message || null;
