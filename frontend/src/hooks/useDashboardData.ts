@@ -38,7 +38,7 @@ export const useDashboardData = (): DashboardState => {
 
             try {
                 // 2. Execute the clean API call service
-                const resultMessage = await fetchUserProfile(accessToken);
+                const resultMessage = await fetchUserProfile();
                 
                 if (resultMessage) {
                     setState({ data: resultMessage, loading: false, error: null });

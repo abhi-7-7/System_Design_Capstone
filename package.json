@@ -6,11 +6,12 @@
   "main": null,
   "scripts": {
     "clean:all": "npm run clean:backend && npm run clean:frontend",
-    "dev:backend": "nodemon --watch backend/src/server.ts --exec \"ts-node backend/src/server.ts\"",
-    "dev:frontend": "vite --hot",
-    "build:backend": "tsc --project backend/tsconfig.json && echo 'Backend build complete.'",
-    "build:frontend": "vite build",
-    "db:migrate": "npx prisma migrate dev --schema backend/prisma/schema.prisma --datasource-api-url \"${process.env.DATABASE_URL}\"",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:backend": "npx prisma generate --schema backend/prisma/schema.prisma && tsc --project backend/tsconfig.json && echo 'Backend build complete.'",
+    "build:frontend": "npm --prefix frontend run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "db:migrate": "npx prisma migrate deploy --schema backend/prisma/schema.prisma",
     "start:all": "npm run clean:all && npm run db:migrate && npm run dev:backend & npm run dev:frontend"
   },
   "keywords": [],

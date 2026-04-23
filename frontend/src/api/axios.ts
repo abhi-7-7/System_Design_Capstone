@@ -74,6 +74,7 @@ export class ApiClient {
         import.meta.env.VITE_API_URL || "http://localhost:3000"
     );
     private static readonly localhostBaseUrl: string = "http://localhost:3000/api";
+    private static readonly requestTimeoutMs: number = Number(import.meta.env.VITE_API_TIMEOUT_MS || 20000);
     private readonly baseUrls: string[];
     private activeBaseUrl: string;
 
@@ -105,7 +106,7 @@ export class ApiClient {
         this.axiosInstance = axios.create({
             baseURL: this.activeBaseUrl,
             withCredentials: true,
-            timeout: 8000,
+            timeout: ApiClient.requestTimeoutMs,
         });
 
         // Phase 1: Request Interceptor (Attach Token)
@@ -163,6 +164,14 @@ export class ApiClient {
                         console.warn("[API] Primary API unreachable. Retrying with fallback:", fallbackBase);
                         return this.axiosInstance(originalRequest);
                     }
+                }
+
+                if (error.code === "ECONNABORTED") {
+                    return Promise.reject(
+                        new Error(
+                            `The API request timed out after ${ApiClient.requestTimeoutMs}ms. Check that the backend is awake and VITE_API_URL is correct.`
+                        )
+                    );
                 }
 
                 // Condition 1: Must be a 401/403 AND we must not have already attempted refresh for this request.

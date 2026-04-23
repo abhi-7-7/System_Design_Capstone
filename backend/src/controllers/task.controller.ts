@@ -7,6 +7,12 @@ import { AuthRequest } from "../middleware/auth.middleware";
  * Implements CRUD operations with strict user isolation.
  */
 export const TaskController = {
+  async getOwnedTask(id: string, userId: string) {
+    return prisma.task.findFirst({
+      where: { id, userId },
+    });
+  },
+
   /**
    * Fetches all tasks associated with the authenticated user.
    */
@@ -56,15 +62,20 @@ export const TaskController = {
     try {
       const { id } = req.params as { id: string };
       const { title, description, status, priorityLevel, priorityScore, deadline, workload } = req.body;
+      const existingTask = await TaskController.getOwnedTask(id, req.userId!);
+
+      if (!existingTask) {
+        return res.status(404).json({ error: "Task not found." });
+      }
 
       const task = await prisma.task.update({
-        where: { id, userId: req.userId },
+        where: { id },
         data: {
-          title,
-          description,
-          status,
-          priorityLevel,
-          priorityScore: parseFloat(priorityScore),
+          title: title ?? existingTask.title,
+          description: description ?? existingTask.description,
+          status: status ?? existingTask.status,
+          priorityLevel: priorityLevel ?? existingTask.priorityLevel,
+          priorityScore: priorityScore !== undefined ? parseFloat(priorityScore) : existingTask.priorityScore,
           deadline: deadline ? new Date(deadline) : undefined,
           workload: workload ? parseInt(workload) : undefined,
         },
@@ -82,8 +93,14 @@ export const TaskController = {
   async deleteTask(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params as { id: string };
+      const existingTask = await TaskController.getOwnedTask(id, req.userId!);
+
+      if (!existingTask) {
+        return res.status(404).json({ error: "Task not found." });
+      }
+
       await prisma.task.delete({
-        where: { id, userId: req.userId },
+        where: { id },
       });
       return res.status(200).json({ message: "Task deleted successfully." });
     } catch (error) {

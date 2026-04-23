@@ -53,7 +53,10 @@ class ProfileComponent extends Component<ProfileProps, ProfileState> {
     };
 
     handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'userName' | 'userEmail') => {
-        this.setState({ [field]: e.target.value } as any);
+        this.setState((prevState) => ({
+            ...prevState,
+            [field]: e.target.value,
+        }));
     };
 
     handleSave = () => {
