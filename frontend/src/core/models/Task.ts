@@ -1,5 +1,14 @@
+/**
+ * Task domain model — canonical type definitions.
+ *
+ * Fix: Unified PriorityLevel to use 'Low' | 'Medium' | 'High' | 'Critical'
+ * consistently across frontend and backend.
+ * Previously 'Normal' was used in some places and 'Medium' in others, causing
+ * silent type mismatches between the DB values and frontend rendering logic.
+ */
+
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
-export type PriorityLevel = 'Normal' | 'High' | 'Critical';
+export type PriorityLevel = 'Low' | 'Medium' | 'High' | 'Critical';
 
 export interface ITask {
   id: string;
@@ -14,6 +23,10 @@ export interface ITask {
   createdAt: Date;
 }
 
+/**
+ * Task — immutable value object constructed via TaskBuilder.
+ * Implements the Builder pattern for safe, validated construction.
+ */
 export class Task implements ITask {
   public id: string;
   public title: string;
@@ -32,14 +45,18 @@ export class Task implements ITask {
     this.description = builder.description || '';
     this.status = builder.status || 'TODO';
     this.deadline = builder.deadline || new Date();
-    this.priorityLevel = builder.priorityLevel || 'Normal';
-    this.workload = builder.workload || 1;
-    this.priorityScore = builder.priorityScore || 0;
+    this.priorityLevel = builder.priorityLevel || 'Medium';
+    this.workload = builder.workload ?? 1;
+    this.priorityScore = builder.priorityScore ?? 0;
     this.tags = builder.tags || [];
     this.createdAt = builder.createdAt || new Date();
   }
 }
 
+/**
+ * TaskBuilder — fluent interface for constructing Task instances.
+ * Enforces required fields (title) at build time.
+ */
 export class TaskBuilder {
   public id?: string;
   public title!: string;
@@ -53,57 +70,21 @@ export class TaskBuilder {
   public createdAt?: Date;
 
   constructor(title: string) {
-    this.title = title;
+    if (!title || !title.trim()) throw new Error('Task title is required.');
+    this.title = title.trim();
   }
 
-  public setId(id: string): TaskBuilder {
-    this.id = id;
-    return this;
-  }
-
-  public setDescription(description: string): TaskBuilder {
-    this.description = description;
-    return this;
-  }
-
-  public setStatus(status: TaskStatus): TaskBuilder {
-    this.status = status;
-    return this;
-  }
-
-  public setDeadline(deadline: Date): TaskBuilder {
-    this.deadline = deadline;
-    return this;
-  }
-
-  public setPriorityLevel(level: PriorityLevel): TaskBuilder {
-    this.priorityLevel = level;
-    return this;
-  }
-
-  public setWorkload(workload: number): TaskBuilder {
-    this.workload = workload;
-    return this;
-  }
-
-  public setPriorityScore(score: number): TaskBuilder {
-    this.priorityScore = score;
-    return this;
-  }
-
-  public setTags(tags: string[]): TaskBuilder {
-    this.tags = tags;
-    return this;
-  }
-
-  public setCreatedAt(createdAt: Date): TaskBuilder {
-    this.createdAt = createdAt;
-    return this;
-  }
+  public setId(id: string): this { this.id = id; return this; }
+  public setDescription(description: string): this { this.description = description; return this; }
+  public setStatus(status: TaskStatus): this { this.status = status; return this; }
+  public setDeadline(deadline: Date): this { this.deadline = deadline; return this; }
+  public setPriorityLevel(level: PriorityLevel): this { this.priorityLevel = level; return this; }
+  public setWorkload(workload: number): this { this.workload = workload; return this; }
+  public setPriorityScore(score: number): this { this.priorityScore = score; return this; }
+  public setTags(tags: string[]): this { this.tags = tags; return this; }
+  public setCreatedAt(createdAt: Date): this { this.createdAt = createdAt; return this; }
 
   public build(): Task {
-    // Basic validation
-    if (!this.title) throw new Error("Task title is required");
     return new Task(this);
   }
 }
