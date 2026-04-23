@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { TaskService } from '../core/services/TaskService';
 import { Task } from '../core/models/Task';
 import type { PriorityLevel } from '../core/models/Task';
@@ -24,50 +24,47 @@ export const useSmartFlowController = () => {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [activeStrategy, setActiveStrategy] = useState<'deadline' | 'workload'>('deadline');
 
-  // Stable observer — created once, never recreated on re-render.
-  const observer: IObserver = useCallback(
-    {
-      update(event: string, task: Task) {
-        switch (event) {
-          case 'TASK_ADDED':
-          case 'TASK_UPDATED':
-          case 'TASK_DELETED':
-          case 'PRIORITIES_RECALCULATED':
-            setTasks([...taskService.getTasks()]);
-            setAnalytics(taskService.getAnalytics());
-            break;
-          case 'DEADLINE_WARNING': {
-            const now = new Date();
-            const diffHours = Math.round(
-              (new Date(task.deadline).getTime() - now.getTime()) / (1000 * 3600)
-            );
-            const timeStr =
-              diffHours < 0
-                ? `Overdue by ${Math.abs(diffHours)}h`
-                : diffHours < 24
-                ? `${diffHours}h left`
-                : '1d left';
+  // Stable observer — useRef keeps the same object identity across re-renders.
+  const observerRef = useRef<IObserver>({
+    update(event: string, task: Task) {
+      switch (event) {
+        case 'TASK_ADDED':
+        case 'TASK_UPDATED':
+        case 'TASK_DELETED':
+        case 'PRIORITIES_RECALCULATED':
+          setTasks([...taskService.getTasks()]);
+          setAnalytics(taskService.getAnalytics());
+          break;
+        case 'DEADLINE_WARNING': {
+          const now = new Date();
+          const diffHours = Math.round(
+            (new Date(task.deadline).getTime() - now.getTime()) / (1000 * 3600)
+          );
+          const timeStr =
+            diffHours < 0
+              ? `Overdue by ${Math.abs(diffHours)}h`
+              : diffHours < 24
+              ? `${diffHours}h left`
+              : '1d left';
 
-            setNotifications((prev) => {
-              const alreadyExists = prev.some(
-                (n) => n.message === `Warning: Task "${task.title}" is nearing its deadline!`
-              );
-              if (alreadyExists) return prev;
-              return [
-                ...prev,
-                { id: Date.now(), message: `Warning: Task "${task.title}" is nearing its deadline!`, highlight: timeStr },
-              ];
-            });
-            break;
-          }
+          setNotifications((prev) => {
+            const alreadyExists = prev.some(
+              (n) => n.message === `Warning: Task "${task.title}" is nearing its deadline!`
+            );
+            if (alreadyExists) return prev;
+            return [
+              ...prev,
+              { id: Date.now(), message: `Warning: Task "${task.title}" is nearing its deadline!`, highlight: timeStr },
+            ];
+          });
+          break;
         }
-      },
-    } as IObserver,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  ) as IObserver;
+      }
+    },
+  });
 
   useEffect(() => {
+    const observer = observerRef.current;
     taskService.getEventManager().addObserver(observer);
     taskService.fetchTasks().catch((err) => {
       console.error('Failed to load tasks:', err);
@@ -75,7 +72,8 @@ export const useSmartFlowController = () => {
     return () => {
       taskService.getEventManager().removeObserver(observer);
     };
-  }, [observer, taskService]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskService]);
 
   const handleStrategyChange = (type: 'deadline' | 'workload') => {
     setActiveStrategy(type);

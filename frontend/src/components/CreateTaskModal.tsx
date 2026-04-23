@@ -59,7 +59,7 @@ class CreateTaskModal extends Component<CreateTaskModalProps, CreateTaskModalSta
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
     field: keyof CreateTaskModalState
   ) => {
-    this.setState({ [field]: e.target.value, error: null } as Pick<CreateTaskModalState, typeof field>);
+    this.setState((prev) => ({ ...prev, [field]: e.target.value, error: null }));
   };
 
   handleSubmit = (e: React.FormEvent) => {
