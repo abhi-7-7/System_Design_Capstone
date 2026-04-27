@@ -137,16 +137,41 @@ npm run dev:frontend  # Vite dev server on :5173
 
 ---
 
-## 📊 UML Diagrams
+## 📊 Architecture & Design Diagrams
 
-All architecture diagrams live in the [`images/`](./images) directory:
+Comprehensive system design documentation covering functional, structural, and behavioral aspects.
 
-| Diagram | Description |
-|---------|-------------|
-| **Use Case** | Actor interactions — User & Admin flows |
-| **ER Diagram** | Database schema — User, Task, RefreshToken entities |
-| **Class Diagram** | OOP design — Controllers, Services, Strategy & Observer patterns |
-| **Sequence Diagram** | Runtime flows — Auth, Task CRUD, Notifications, Caching |
+<details>
+<summary><b>📐 Use Case Diagram</b> (Click to expand)</summary>
+<br>
+
+> Visualizes user interactions and system boundaries.
+![Use Case Diagram](./images/Use_case_diagram.png)
+</details>
+
+<details>
+<summary><b>🗄️ Entity Relationship Diagram (ERD)</b> (Click to expand)</summary>
+<br>
+
+> Database schema design with relations and constraints.
+![ER Diagram](./images/ER_diagram.png)
+</details>
+
+<details>
+<summary><b>🏗️ Class Diagram</b> (Click to expand)</summary>
+<br>
+
+> Object-oriented structure and applied Design Patterns (Strategy, Observer, Builder).
+![Class Diagram](./images/Class_diagram.png)
+</details>
+
+<details>
+<summary><b>🔄 Sequence Diagram</b> (Click to expand)</summary>
+<br>
+
+> Runtime logic for Auth, CRUD operations, and real-time notifications.
+![Sequence Diagram](./images/Sequence_diagram.png)
+</details>
 
 ---
 
