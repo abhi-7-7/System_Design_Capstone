@@ -9,6 +9,8 @@ This folder contains all architecture and design diagrams used in the **System D
 ### Description
 Represents the interactions between users/admins and the Task Management System.
 
+![Use Case Diagram](./Use_case_diagram.png)
+
 ### Actors
 - **User**
   - Login / Registration
@@ -27,6 +29,8 @@ Represents the interactions between users/admins and the Task Management System.
 
 ### Description
 Defines the database schema and relationships between entities.
+
+![ER Diagram](./ER_diagram.png)
 
 ### Entities
 #### User
@@ -63,6 +67,8 @@ Defines the database schema and relationships between entities.
 ### Description
 Illustrates the object-oriented design and design patterns used in the system.
 
+![Class Diagram](./Class_diagram.png)
+
 ### Major Components
 - **Auth Layer**
   - AuthService
@@ -91,6 +97,8 @@ Illustrates the object-oriented design and design patterns used in the system.
 
 ### Description
 Shows interaction flow between system components during major operations.
+
+![Sequence Diagram](./Sequence_diagram.png)
 
 ### Covered Flows
 1. Task Creation Flow  
